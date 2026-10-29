@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔬 Laboratorio Virtual de Química Interactivo</title>
+<style>
+  :root {
+    --bg-primary: #052e16;
+    --bg-secondary: #064e3b;
+    --bg-tertiary: #065f46;
+    --bg-card: rgba(6,78,59,0.7);
+    --border: #10b981;
+    --border-dim: #059669;
+    --text-primary: #ecfdf5;
+    --text-secondary: #a7f3d0;
+    --text-muted: #6ee7b7;
+    --accent: #22c55e;
+    --accent-hover: #16a34a;
+    --accent-glow: rgba(34,197,94,0.4);
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --warning: #f59e0b;
+    --info: #06b6d4;
+    --panel-width: 300px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: rgba(5,46,22,0.95);
+    backdrop-filter: blur(10px);
+    padding: 12px 20px;
+    border-bottom: 2px solid var(--border-dim);
+    display: flex; align-items: center; gap: 14px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+  .header-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #22c55e, #059669);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+  .header-title { flex: 1; }
+  .header-title h1 { font-size: 20px; color: var(--text-primary); margin: 0; }
+  .header-title p { font-size: 13px; color: var(--text-muted); margin: 2px 0 0 0; }
+  .btn {
+    border: none; padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+    user-select: none;
+  }
+  .btn-info { background: #0d9488; color: white; }
+  .btn-info:hover { background: #0f766e; transform: translateY(-2px); }
+
+  /* ===== MAIN LAYOUT ===== */
+  .main-container { display: flex; min-height: calc(100vh - 72px); position: relative; }
+
+  /* ===== TOGGLE BUTTONS ===== */
+  .panel-toggle {
+    position: absolute; top: 12px; z-index: 50;
+    width: 36px; height: 36px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-dim);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .panel-toggle:hover { background: var(--accent); border-color: var(--accent); }
+  .toggle-left { left: 12px; }
+  .toggle-right { right: 12px; }
+
+  /* ===== PANELS ===== */
+  .panel {
+    width: var(--panel-width);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-dim);
+    padding: 16px;
+    overflow-y: auto;
+    max-height: calc(100vh - 72px);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .panel.collapsed {
+    width: 0; padding: 0; border: none; overflow: hidden;
+    opacity: 0; pointer-events: none;
+  }
+  .panel-right {
+    border-right: none;
+    border-left: 1px solid var(--border-dim);
+  }
+  .panel-section-title {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin: 12px 0 8px 0; padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .panel-section-title:first-child { margin-top: 0; }
+
+  .elements-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    margin-bottom: 12px;
+  }
+  .element-card {
+    border-radius: 8px; padding: 8px 4px;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s ease; user-select: none;
+    border: 2px solid transparent;
+    position: relative; overflow: hidden;
+    background: rgba(16,185,129,0.08);
+  }
+  .element-card:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    border-color: var(--accent);
+    background: rgba(16,185,129,0.18);
+  }
+  .element-card:active { transform: scale(0.95); }
+  .element-symbol { font-size: 15px; font-weight: 800; }
+  .element-name { font-size: 9px; margin-top: 2px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .element-type { font-size: 7.5px; margin-top: 1px; text-transform: uppercase; letter-spacing: 0.3px; opacity: 0.7; }
+
+  /* ===== CENTER AREA ===== */
+  .panel-center {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; padding: 20px;
+    background: radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, transparent 70%);
+    transition: all 0.35s ease;
+  }
+
+  /* Flask Styling */
+  .flask-container { position: relative; margin-bottom: 20px; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.6)); }
+  .flask { width: 220px; height: 280px; position: relative; }
+  .flask-neck {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 75px;
+    border: 3px solid rgba(16,185,129,0.4);
+    border-bottom: none; border-radius: 8px 8px 0 0;
+    background: rgba(255,255,255,0.02);
+  }
+  .flask-body {
+    position: absolute; top: 73px; left: 0;
+    width: 220px; height: 207px;
+    border: 3px solid rgba(16,185,129,0.4);
+    border-radius: 0 0 110px 110px;
+    background: rgba(255,255,255,0.01);
+    overflow: hidden;
+    box-shadow: inset 0 0 40px rgba(16,185,129,0.1), 0 0 20px rgba(34,197,94,0.05);
+  }
+  .flask-liquid {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 0%;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0 0 107px 107px;
+  }
+  .flask-liquid::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 10px;
+    background: rgba(255,255,255,0.2); border-radius: 50%; filter: blur(2px);
+  }
+  .flask-reflection {
+    position: absolute; top: 85px; left: 20px;
+    width: 22px; height: 130px;
+    background: rgba(255,255,255,0.04); border-radius: 11px;
+    pointer-events: none;
+  }
+  .flask-contents {
+    position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-wrap: wrap; gap: 6px;
+    justify-content: center; width: 170px;
+    max-height: 140px; overflow: hidden; z-index: 5;
+  }
+  .flask-tag {
+    padding: 3px 10px; border-radius: 6px;
+    font-size: 12px; font-weight: 700;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.2);
+    animation: dropIn 0.4s ease-out;
+  }
+  @keyframes dropIn {
+    0% { transform: translateY(-20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Effects */
+  .bubbles-container { position: absolute; bottom: 0; left: 0; right: 0; top: 0; pointer-events: none; overflow: hidden; }
+  .bubble {
+    position: absolute; bottom: 0;
+    background: rgba(255,255,255,0.4); border-radius: 50%;
+    animation: riseUp linear forwards;
+  }
+  @keyframes riseUp {
+    0% { transform: translateY(0) scale(1); opacity: 0.6; }
+    100% { transform: translateY(-190px) scale(0.2); opacity: 0; }
+  }
+  .precipitate {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    border-radius: 50%;
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0;
+  }
+  .particle {
+    position: absolute; border-radius: 50%;
+    animation: explodeOut ease-out forwards;
+  }
+  @keyframes explodeOut {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+  }
+  .reaction-glow {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px; height: 320px; border-radius: 50%;
+    opacity: 0; transition: opacity 0.5s;
+    pointer-events: none; filter: blur(45px);
+  }
+  .steam {
+    position: absolute; top: -10px; left: 50%;
+    transform: translateX(-50%);
+    width: 50px; height: 50px;
+    opacity: 0; pointer-events: none; transition: opacity 0.5s;
+  }
+  .steam-particle {
+    position: absolute; bottom: 0; left: 50%;
+    width: 10px; height: 10px;
+    background: rgba(255,255,255,0.25); border-radius: 50%;
+    animation: steamRise 2s ease-out infinite;
+  }
+  @keyframes steamRise {
+    0% { transform: translateX(-50%) translateY(0) scale(1); opacity: 0.4; }
+    100% { transform: translateX(-50%) translateY(-70px) scale(2.5); opacity: 0; }
+  }
+  .sparkle {
+    position: absolute; width: 5px; height: 5px;
+    background: #fbbf24; border-radius: 50%;
+    animation: sparkleAnim 1s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes sparkleAnim {
+    0% { transform: scale(0); opacity: 1; }
+    50% { transform: scale(1.8); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  .status-msg {
+    margin-top: 14px; font-size: 14px;
+    color: var(--text-muted); min-height: 22px;
+    text-align: center; font-weight: 600;
+    transition: color 0.3s;
+  }
+
+  .action-row { display: flex; gap: 12px; margin-top: 10px; }
+
+  /* ===== RIGHT PANEL ===== */
+  .content-box {
+    background: rgba(5,46,22,0.6);
+    border-radius: 10px; padding: 14px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border-dim);
+  }
+  .selected-item {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    border-radius: 8px; padding: 7px 10px;
+    margin-bottom: 6px; border: 1px solid;
+    transition: all 0.2s;
+  }
+  .selected-item:hover { transform: translateX(3px); }
+  .remove-btn {
+    color: var(--danger); cursor: pointer;
+    font-size: 18px; font-weight: 700;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; transition: all 0.2s;
+  }
+  .remove-btn:hover { background: rgba(239,68,68,0.2); }
+
+  .result-header { text-align: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-dim); }
+  .result-formula {
+    font-size: 26px; font-weight: 800;
+    color: var(--text-primary);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+  .result-name { font-size: 13px; color: var(--text-muted); margin-top: 3px; font-weight: 600; }
+  .equation-box {
+    background: rgba(6,78,59,0.8);
+    border-radius: 8px; padding: 10px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--accent);
+  }
+  .equation-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .equation-text { font-size: 13px; color: var(--text-primary); font-family: 'Courier New', monospace; word-break: break-all; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .info-cell { background: rgba(6,78,59,0.8); border-radius: 8px; padding: 8px; text-align: center; }
+  .info-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-value { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .description-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: rgba(6,78,59,0.4); border-radius: 6px; }
+
+  .history-item {
+    background: rgba(5,46,22,0.6);
+    border-radius: 8px; padding: 8px 10px;
+    margin-bottom: 6px;
+    border: 1px solid var(--border-dim);
+  }
+  .history-inputs { color: var(--text-muted); font-size: 11px; }
+  .history-arrow { color: var(--text-muted); margin: 0 4px; }
+  .history-result { color: #34d399; font-weight: 700; font-size: 12px; }
+  .history-name { color: var(--text-muted); font-size: 9px; margin-top: 2px; }
+
+  .empty-state { color: var(--text-muted); font-size: 12px; text-align: center; padding: 16px; opacity: 0.7; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(5px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000; opacity: 0; transition: opacity 0.3s;
+  }
+  .modal-overlay.active { display: flex; opacity: 1; }
+  .modal-content {
+    background: var(--bg-secondary);
+    border-radius: 16px; padding: 24px;
+    max-width: 500px; width: 90%;
+    border: 1px solid var(--border-dim);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  }
+  .modal-title { font-size: 18px; color: var(--text-primary); margin-bottom: 14px; font-weight: 700; }
+  .modal-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .modal-close { margin-top: 16px; width: 100%; justify-content: center; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  @media(max-width: 1024px) {
+    .main-container { flex-direction: column; }
+    .panel { width: 100%; max-height: none; border: none; }
+    .panel.collapsed { height: 0; }
+    .panel-center { padding: 20px; min-height: 400px; }
+    .panel-toggle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🧪</div>
+  <div class="header-title">
+    <h1>Laboratorio Virtual de Química Reactiva</h1>
+    <p>Simulador Dinámico Universal: Combina cualquier par de elementos o compuestos</p>
+  </div>
+  <button class="btn btn-info" onclick="showInfo()">ℹ️ Instrucciones</button>
+</div>
+
+<div class="main-container">
+
+  <!-- Toggle Buttons -->
+  <button class="panel-toggle toggle-left" id="toggle-left" onclick="togglePanel('left')" title="Paneles de Reactivos">☰</button>
+  <button class="panel-toggle toggle-right" id="toggle-right" onclick="togglePanel('right')" title="Paneles de Resultados">☰</button>
+
+  <!-- LEFT PANEL -->
+  <div class="panel" id="panel-left">
+    <h3 class="panel-section-title">🔥 Metales Alcalinos</h3>
+    <div class="elements-grid" id="alkali-grid"></div>
+
+    <h3 class="panel-section-title">⚡ Metales Alcalinotérreos</h3>
+    <div class="elements-grid" id="alkaline-grid"></div>
+
+    <h3 class="panel-section-title">🔩 Metales de Transición</h3>
+    <div class="elements-grid" id="transition-grid"></div>
+
+    <h3 class="panel-section-title">🪙 Otros Metales</h3>
+    <div class="elements-grid" id="other-metals-grid"></div>
+
+    <h3 class="panel-section-title">💨 No Metales</h3>
+    <div class="elements-grid" id="nonmetals-grid"></div>
+
+    <h3 class="panel-section-title">👑 Gases Nobles</h3>
+    <div class="elements-grid" id="noble-grid"></div>
+
+    <h3 class="panel-section-title">⚗️ Compuestos y Ácidos</h3>
+    <div class="elements-grid" id="compounds-grid"></div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="panel-center" id="panel-center">
+    <div class="flask-container">
+      <div class="flask">
+        <div class="flask-neck"></div>
+        <div class="flask-body">
+          <div class="flask-liquid" id="liquid"></div>
+          <div class="bubbles-container" id="bubbles"></div>
+          <div class="precipitate" id="precipitate"></div>
+        </div>
+        <div class="flask-reflection"></div>
+        <div class="flask-contents" id="flask-contents"></div>
+        <div class="reaction-glow" id="reaction-glow"></div>
+        <div class="steam" id="steam">
+          <div class="steam-particle" style="animation-delay:0s"></div>
+          <div class="steam-particle" style="animation-delay:0.5s"></div>
+          <div class="steam-particle" style="animation-delay:1s"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn" id="mix-btn" onclick="mixElements()" disabled style="background:var(--accent); color:white;">⚗️ MEZCLAR Y REACCIONAR</button>
+      <button class="btn" onclick="resetLab()" style="background:var(--danger); color:white;">🗑 LIMPIAR MATRAZ</button>
+    </div>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel panel-right" id="panel-right">
+    <h3 class="panel-section-title">📋 En el Matraz</h3>
+    <div class="content-box" id="selected-list">
+      <div class="empty-state">Selecciona hasta 2 elementos o compuestos.</div>
+    </div>
+
+    <h3 class="panel-section-title">🧪 Resultado Dinámico</h3>
+    <div class="content-box" id="result-panel">
+      <div class="empty-state">Mezcla 2 sustancias para ver la reacción generada.</div>
+    </div>
+
+    <h3 class="panel-section-title">📜 Historial de Reacciones</h3>
+    <div id="history-list">
+      <div class="empty-state">Aún no has realizado ninguna mezcla.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE INSTRUCCIONES -->
+<div class="modal-overlay" id="info-modal" onclick="closeInfo(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-title">🔬 Motor de Reacciones Químicas Dinámicas</div>
+    <div class="modal-text">
+      <p><strong>1. Mezcla Universal:</strong> Ahora puedes combinar <u>cualquier par de elementos o compuestos</u> del panel izquierdo.</p>
+      <p style="margin-top:8px"><strong>2. Motor Algorítmico Químico:</strong> Si realizas una mezcla común (ej. Na + H₂O, HCl + NaOH, Fe + O) obtendrás su ecuación balanceada exacta y efectos específicos.</p>
+      <p style="margin-top:8px"><strong>3. Reacciones Generadas Dinámicamente:</strong> Si combinas cualquier otro par de elementos, el laboratorio calculará de forma algorítmica el compuesto resultante (sales, óxidos, hidruros, disoluciones o complejos) evaluando sus estados de oxidación y valencias.</p>
+      <p style="margin-top:8px"><strong>4. Efectos Visuales Adaptativos:</strong> Observa si la mezcla genera burbujas de gas, precipitado sólido, humo/vapor, chispas o explosiones según la reactividad.</p>
+    </div>
+    <button class="btn btn-info modal-close" onclick="closeInfo()">¡Entendido, a experimentar!</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// BASE DE DATOS EXTENDIDA DE ELEMENTOS Y COMPUESTOS
+// ============================================================
+const alkaliMetals = [
+  { id:'li', symbol:'Li', name:'Litio', type:'alkali', color:'#a78bfa', valencia:1, category:'metal' },
+  { id:'na', symbol:'Na', name:'Sodio', type:'alkali', color:'#c084fc', valencia:1, category:'metal' },
+  { id:'k', symbol:'K', name:'Potasio', type:'alkali', color:'#a78bfa', valencia:1, category:'metal' },
+  { id:'rb', symbol:'Rb', name:'Rubidio', type:'alkali', color:'#8b5cf6', valencia:1, category:'metal' },
+  { id:'cs', symbol:'Cs', name:'Cesio', type:'alkali', color:'#7c3aed', valencia:1, category:'metal' },
+  { id:'fr', symbol:'Fr', name:'Francio', type:'alkali', color:'#6d28d9', valencia:1, category:'metal' }
+];
+
+const alkalineMetals = [
+  { id:'be', symbol:'Be', name:'Berilio', type:'alkaline', color:'#94a3b8', valencia:2, category:'metal' },
+  { id:'mg', symbol:'Mg', name:'Magnesio', type:'alkaline', color:'#e2e8f0', valencia:2, category:'metal' },
+  { id:'ca', symbol:'Ca', name:'Calcio', type:'alkaline', color:'#fde68a', valencia:2, category:'metal' },
+  { id:'sr', symbol:'Sr', name:'Estroncio', type:'alkaline', color:'#fcd34d', valencia:2, category:'metal' },
+  { id:'ba', symbol:'Ba', name:'Bario', type:'alkaline', color:'#fbbf24', valencia:2, category:'metal' },
+  { id:'ra', symbol:'Ra', name:'Radio', type:'alkaline', color:'#f59e0b', valencia:2, category:'metal' }
+];
+
+const transitionMetals = [
+  { id:'sc', symbol:'Sc', name:'Escandio', type:'transition', color:'#cbd5e1', valencia:3, category:'metal' },
+  { id:'ti', symbol:'Ti', name:'Titanio', type:'transition', color:'#94a3b8', valencia:4, category:'metal' },
+  { id:'v', symbol:'V', name:'Vanadio', type:'transition', color:'#a1a1aa', valencia:5, category:'metal' },
+  { id:'cr', symbol:'Cr', name:'Cromo', type:'transition', color:'#71717a', valencia:3, category:'metal' },
+  { id:'mn', symbol:'Mn', name:'Manganeso', type:'transition', color:'#52525b', valencia:2, category:'metal' },
+  { id:'fe', symbol:'Fe', name:'Hierro', type:'transition', color:'#fb923c', valencia:3, category:'metal' },
+  { id:'co', symbol:'Co', name:'Cobalto', type:'transition', color:'#60a5fa', valencia:2, category:'metal' },
+  { id:'ni', symbol:'Ni', name:'Níquel', type:'transition', color:'#94a3b8', valencia:2, category:'metal' },
+  { id:'cu', symbol:'Cu', name:'Cobre', type:'transition', color:'#fbbf24', valencia:2, category:'metal' },
+  { id:'zn', symbol:'Zn', name:'Zinc', type:'transition', color:'#94a3b8', valencia:2, category:'metal' },
+  { id:'ag', symbol:'Ag', name:'Plata', type:'transition', color:'#e2e8f0', valencia:1, category:'metal' },
+  { id:'au', symbol:'Au', name:'Oro', type:'transition', color:'#facc15', valencia:3, category:'metal' },
+  { id:'hg', symbol:'Hg', name:'Mercurio', type:'transition', color:'#a1a1aa', valencia:2, category:'metal' },
+  { id:'pt', symbol:'Pt', name:'Platino', type:'transition', color:'#d4d4d8', valencia:4, category:'metal' },
+  { id:'sn', symbol:'Sn', name:'Estaño', type:'transition', color:'#a1a1aa', valencia:4, category:'metal' },
+  { id:'pb', symbol:'Pb', name:'Plomo', type:'transition', color:'#71717a', valencia:2, category:'metal' }
+];
+
+const otherMetals = [
+  { id:'al', symbol:'Al', name:'Aluminio', type:'other-metal', color:'#cbd5e1', valencia:3, category:'metal' },
+  { id:'ga', symbol:'Ga', name:'Galio', type:'other-metal', color:'#94a3b8', valencia:3, category:'metal' },
+  { id:'in', symbol:'In', name:'Indio', type:'other-metal', color:'#a1a1aa', valencia:3, category:'metal' },
+  { id:'tl', symbol:'Tl', name:'Talio', type:'other-metal', color:'#71717a', valencia:1, category:'metal' },
+  { id:'bi', symbol:'Bi', name:'Bismuto', type:'other-metal', color:'#a78bfa', valencia:3, category:'metal' }
+];
+
+const nonmetals = [
+  { id:'h', symbol:'H', name:'Hidrógeno', type:'nonmetal', color:'#f472b6', valencia:1, category:'nonmetal' },
+  { id:'c', symbol:'C', name:'Carbono', type:'nonmetal', color:'#94a3b8', valencia:4, category:'nonmetal' },
+  { id:'n', symbol:'N', name:'Nitrógeno', type:'nonmetal', color:'#38bdf8', valencia:3, category:'nonmetal' },
+  { id:'o', symbol:'O', name:'Oxígeno', type:'nonmetal', color:'#60a5fa', valencia:2, category:'nonmetal' },
+  { id:'f', symbol:'F', name:'Flúor', type:'halogen', color:'#4ade80', valencia:1, category:'halogen' },
+  { id:'p', symbol:'P', name:'Fósforo', type:'nonmetal', color:'#f87171', valencia:3, category:'nonmetal' },
+  { id:'s', symbol:'S', name:'Azufre', type:'nonmetal', color:'#facc15', valencia:2, category:'nonmetal' },
+  { id:'cl', symbol:'Cl', name:'Cloro', type:'halogen', color:'#4ade80', valencia:1, category:'halogen' },
+  { id:'se', symbol:'Se', name:'Selenio', type:'nonmetal', color:'#fbbf24', valencia:2, category:'nonmetal' },
+  { id:'br', symbol:'Br', name:'Bromo', type:'halogen', color:'#a16207', valencia:1, category:'halogen' },
+  { id:'i', symbol:'I', name:'Yodo', type:'halogen', color:'#a855f7', valencia:1, category:'halogen' },
+  { id:'b', symbol:'B', name:'Boro', type:'metalloid', color:'#fbbf24', valencia:3, category:'nonmetal' },
+  { id:'si', symbol:'Si', name:'Silicio', type:'metalloid', color:'#94a3b8', valencia:4, category:'nonmetal' },
+  { id:'as', symbol:'As', name:'Arsénico', type:'metalloid', color:'#71717a', valencia:3, category:'nonmetal' },
+  { id:'sb', symbol:'Sb', name:'Antimonio', type:'metalloid', color:'#a1a1aa', valencia:3, category:'nonmetal' },
+  { id:'te', symbol:'Te', name:'Telurio', type:'metalloid', color:'#52525b', valencia:2, category:'nonmetal' }
+];
+
+const nobleGases = [
+  { id:'he', symbol:'He', name:'Helio', type:'noble', color:'#f472b6', valencia:0, category:'noble' },
+  { id:'ne', symbol:'Ne', name:'Neón', type:'noble', color:'#f87171', valencia:0, category:'noble' },
+  { id:'ar', symbol:'Ar', name:'Argón', type:'noble', color:'#60a5fa', valencia:0, category:'noble' },
+  { id:'kr', symbol:'Kr', name:'Kriptón', type:'noble', color:'#a78bfa', valencia:0, category:'noble' },
+  { id:'xe', symbol:'Xe', name:'Xenón', type:'noble', color:'#94a3b8', valencia:0, category:'noble' },
+  { id:'rn', symbol:'Rn', name:'Radón', type:'noble', color:'#71717a', valencia:0, category:'noble' }
+];
+
+const compounds = [
+  { id:'h2o', symbol:'H₂O', name:'Agua', type:'acid-base', color:'#0ea5e9', category:'compound', compoundType:'water' },
+  { id:'hcl', symbol:'HCl', name:'Ác. Clorhídrico', type:'acid-base', color:'#a3e635', category:'compound', compoundType:'acid' },
+  { id:'naoh', symbol:'NaOH', name:'Hidróx. Sodio', type:'acid-base', color:'#f87171', category:'compound', compoundType:'base' },
+  { id:'co2', symbol:'CO₂', name:'Dióx. Carbono', type:'acid-base', color:'#cbd5e1', category:'compound', compoundType:'oxide' },
+  { id:'h2so4', symbol:'H₂SO₄', name:'Ác. Sulfúrico', type:'acid-base', color:'#fbbf24', category:'compound', compoundType:'acid' },
+  { id:'nh3', symbol:'NH₃', name:'Amoníaco', type:'acid-base', color:'#22d3ee', category:'compound', compoundType:'base' },
+  { id:'hno3', symbol:'HNO₃', name:'Ác. Nítrico', type:'acid-base', color:'#f97316', category:'compound', compoundType:'acid' },
+  { id:'ch4', symbol:'CH₄', name:'Metano', type:'acid-base', color:'#94a3b8', category:'compound', compoundType:'organic' }
+];
+
+const allItems = [...alkaliMetals, ...alkalineMetals, ...transitionMetals, ...otherMetals, ...nonmetals, ...nobleGases, ...compounds];
+
+let selected = [];
+let history = [];
+let isMixed = false;
+
+function renderCards(items, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = items.map(el => `
+    <div class="element-card" onclick="addElement('${el.id}')"
+         style="background:${el.color}15; border-color:${el.color}30;"
+         onmouseover="this.style.borderColor='${el.color}'; this.style.background='${el.color}25'"
+         onmouseout="this.style.borderColor='${el.color}30'; this.style.background='${el.color}15'">
+      <div class="element-symbol" style="color:${el.color}">${el.symbol}</div>
+      <div class="element-name">${el.name}</div>
+      <div class="element-type" style="color:${el.color}">${el.type}</div>
+    </div>
+  `).join('');
+}
+
+function getItem(id) { return allItems.find(e => e.id === id); }
+
+function renderAll() {
+  renderCards(alkaliMetals, 'alkali-grid');
+  renderCards(alkalineMetals, 'alkaline-grid');
+  renderCards(transitionMetals, 'transition-grid');
+  renderCards(otherMetals, 'other-metals-grid');
+  renderCards(nonmetals, 'nonmetals-grid');
+  renderCards(nobleGases, 'noble-grid');
+  renderCards(compounds, 'compounds-grid');
+}
+
+function togglePanel(side) {
+  const panel = document.getElementById('panel-' + side);
+  panel.classList.toggle('collapsed');
+}
+
+function addElement(id) {
+  if (isMixed) { showStatus('⚠️ Limpia el matraz primero para hacer otro experimento', 'warning'); return; }
+  if (selected.length >= 2) { showStatus('⚠️ Máximo 2 elementos por mezcla', 'warning'); return; }
+  selected.push(id);
+  updateUI();
+  showStatus(`✅ ${getItem(id).name} agregado al matraz`, 'success');
+}
+
+function removeElement(index) {
+  if (isMixed) return;
+  const removed = selected[index];
+  selected.splice(index, 1);
+  updateUI();
+  showStatus(`🗑️ ${getItem(removed).name} quitado`, 'info');
+}
+
+function updateUI() {
+  const list = document.getElementById('selected-list');
+  const flaskContents = document.getElementById('flask-contents');
+  const mixBtn = document.getElementById('mix-btn');
+  const liquid = document.getElementById('liquid');
+
+  if (selected.length === 0) {
+    list.innerHTML = '<div class="empty-state">Selecciona hasta 2 elementos o compuestos.</div>';
+    flaskContents.innerHTML = '';
+    mixBtn.disabled = true;
+    liquid.style.height = '0%';
+    liquid.style.background = 'rgba(34,197,94,0.15)';
+  } else {
+    list.innerHTML = selected.map((id, i) => {
+      const item = getItem(id);
+      return `
+        <div class="selected-item" style="background:${item.color}15; border-color:${item.color}40;">
+          <span style="color:${item.color}; font-weight:800; font-size:14px;">${item.symbol}</span>
+          <span style="color:var(--text-secondary); font-size:11px; flex:1; margin-left:8px;">${item.name}</span>
+          <span class="remove-btn" onclick="removeElement(${i})">×</span>
+        </div>`;
+    }).join('');
+
+    flaskContents.innerHTML = selected.map(id => {
+      const item = getItem(id);
+      return `<div class="flask-tag" style="background:${item.color}35; color:${item.color}; border-color:${item.color}60;">${item.symbol}</div>`;
+    }).join('');
+
+    mixBtn.disabled = selected.length < 2;
+    liquid.style.height = Math.min(selected.length * 15 + 10, 65) + '%';
+    liquid.style.background = 'rgba(34,197,94,0.2)';
+  }
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  if (type === 'warning') el.style.color = '#f87171';
+  else if (type === 'success') el.style.color = '#4ade80';
+  else if (type === 'info') el.style.color = '#38bdf8';
+  else el.style.color = 'var(--text-muted)';
+}
+
+// ============================================================
+// MOTOR GENERAL Y DINÁMICO DE REACCIONES QUÍMICAS
+// ============================================================
+
+function simplifyRatio(val1, val2) {
+  const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+  const common = gcd(val1, val2);
+  return [val1 / common, val2 / common];
+}
+
+function toSubscript(num) {
+  if (num <= 1) return '';
+  const subs = {'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉'};
+  return String(num).split('').map(d => subs[d] || d).join('');
+}
+
+function calculateDynamicReaction(itemA, itemB) {
+  // Misma sustancia
+  if (itemA.id === itemB.id) {
+    if (itemA.category === 'nonmetal' || itemA.category === 'halogen') {
+      return {
+        result: `${itemA.symbol}₂`,
+        name: `Molécula Diatómica de ${itemA.name}`,
+        common: `Gas / Forma Molecular de ${itemA.symbol}`,
+        equation: `2 ${itemA.symbol} → ${itemA.symbol}₂`,
+        type: 'Enlace Covalente',
+        color: itemA.color + '40',
+        desc: `Dos átomos de ${itemA.name} se unen covalentemente para formar una molécula diatómica estable (${itemA.symbol}₂).`,
+        effect: 'bubbles',
+        glowColor: itemA.color + '30'
+      };
+    }
+    return {
+      result: `Solución de ${itemA.symbol}`,
+      name: `Mezcla Concentrada de ${itemA.name}`,
+      common: `Fase Homogénea de ${itemA.symbol}`,
+      equation: `${itemA.symbol} + ${itemA.symbol} → 2 ${itemA.symbol}`,
+      type: 'Disolución / Concentración',
+      color: itemA.color + '50',
+      desc: `La combinación incrementa la concentración y densidad de ${itemA.name} en el matraz sin cambiar su naturaleza química.`,
+      effect: 'none',
+      glowColor: 'transparent'
+    };
+  }
+
+  // Interacción con Gases Nobles
+  if (itemA.category === 'noble' || itemB.category === 'noble') {
+    const noble = itemA.category === 'noble' ? itemA : itemB;
+    const other = itemA.category === 'noble' ? itemB : itemA;
+
+    if (other.id === 'f' && (noble.id === 'xe' || noble.id === 'kr' || noble.id === 'rn')) {
+      return {
+        result: `${noble.symbol}F₂`,
+        name: `Fluoruro de ${noble.name}`,
+        common: `Compuesto Especial de Gas Noble`,
+        equation: `${noble.symbol} + F₂ → ${noble.symbol}F₂`,
+        type: 'Síntesis Especial',
+        color: 'rgba(167,139,250,0.4)',
+        desc: `¡Reacción poco común! El flúor (altamente electronegativo) logra hacer reaccionar al ${noble.name} bajo condiciones extremas.`,
+        effect: 'sparkles',
+        glowColor: 'rgba(167,139,250,0.3)'
+      };
+    }
+
+    return {
+      result: 'Sin reacción',
+      name: `Mezcla Inerte con ${noble.name}`,
+      common: `Mezcla Físicamente Estable`,
+      equation: `${itemA.symbol} + ${itemB.symbol} → No reacciona`,
+      type: 'Inerte / Sin Reacción',
+      color: noble.color + '25',
+      desc: `El ${noble.name} es un gas noble con capa de valencia completa. Permanece completamente inerte sin alterar a ${other.name}.`,
+      effect: 'none',
+      glowColor: 'transparent'
+    };
+  }
+
+  // Metal + Oxígeno (Óxidos Metálicos)
+  if ((itemA.category === 'metal' && itemB.id === 'o') || (itemB.category === 'metal' && itemA.id === 'o')) {
+    const metal = itemA.category === 'metal' ? itemA : itemB;
+    const [subM, subO] = simplifyRatio(2, metal.valencia);
+    const formula = `${metal.symbol}${toSubscript(subM)}O${toSubscript(subO)}`;
+    const isAlkali = metal.type === 'alkali';
+
+    return {
+      result: formula,
+      name: `Óxido de ${metal.name}`,
+      common: `Óxido Básico`,
+      equation: `${subO * 2}${metal.symbol} + ${subM}O₂ → 2${formula}`,
+      type: 'Oxidación / Síntesis',
+      color: 'rgba(251,146,60,0.45)',
+      desc: `El metal ${metal.name} se oxida al reaccionar vigorosamente con el Oxígeno, formando el óxido metálico correspondiente.`,
+      effect: isAlkali ? 'sparkles' : 'precipitate',
+      precipitateColor: 'rgba(255,255,255,0.7)',
+      glowColor: 'rgba(251,146,60,0.3)'
+    };
+  }
+
+  // Metal Alcalino / Alcalinotérreo + Agua (H₂O)
+  if (((itemA.type === 'alkali' || itemA.type === 'alkaline') && itemB.id === 'h2o') ||
+      ((itemB.type === 'alkali' || itemB.type === 'alkaline') && itemA.id === 'h2o')) {
+    const metal = itemA.id !== 'h2o' ? itemA : itemB;
+    const val = metal.valencia;
+    const ohSub = val > 1 ? `(OH)${toSubscript(val)}` : 'OH';
+    const formula = `${metal.symbol}${ohSub}`;
+
+    return {
+      result: `${formula} + H₂↑`,
+      name: `Hidróxido de ${metal.name} + Gas Hidrógeno`,
+      common: `Reacción Exotérmica con Agua`,
+      equation: `2${metal.symbol} + 2H₂O → 2${formula} + H₂↑`,
+      type: 'Desplazamiento / Exotérmica',
+      color: 'rgba(239,68,68,0.5)',
+      desc: `¡Reacción muy violenta! El ${metal.name} desplaza al hidrógeno del agua liberando gas H₂ altamente inflamable y calor.`,
+      effect: metal.type === 'alkali' ? 'explosion' : 'bubbles',
+      glowColor: 'rgba(239,68,68,0.4)'
+    };
+  }
+
+  // Metal + Halógeno/No Metal (Sal Binaria)
+  if ((itemA.category === 'metal' && (itemB.category === 'halogen' || itemB.category === 'nonmetal')) ||
+      (itemB.category === 'metal' && (itemA.category === 'halogen' || itemA.category === 'nonmetal'))) {
+    const metal = itemA.category === 'metal' ? itemA : itemB;
+    const nonmetal = itemA.category === 'metal' ? itemB : itemA;
+
+    const [subM, subNM] = simplifyRatio(nonmetal.valencia, metal.valencia);
+    const formula = `${metal.symbol}${toSubscript(subM)}${nonmetal.symbol}${toSubscript(subNM)}`;
+
+    const prefix = nonmetal.id === 'cl' ? 'Cloruro' : nonmetal.id === 'f' ? 'Fluoruro' : nonmetal.id === 's' ? 'Sulfuro' : nonmetal.id === 'br' ? 'Bromuro' : nonmetal.id === 'i' ? 'Yoduro' : `Sales de ${nonmetal.name}`;
+
+    return {
+      result: formula,
+      name: `${prefix} de ${metal.name}`,
+      common: `Sal Binaria Iónica`,
+      equation: `${subM}${metal.symbol} + ${subNM}${nonmetal.symbol} → ${formula}`,
+      type: 'Síntesis Iónica',
+      color: nonmetal.color + '45',
+      desc: `El metal ${metal.name} cede electrones al no metal ${nonmetal.name}, formando una cristalización iónica estable (${prefix}).`,
+      effect: 'precipitate',
+      precipitateColor: nonmetal.color + '80',
+      glowColor: nonmetal.color + '30'
+    };
+  }
+
+  // Ácido + Base (Neutralización)
+  if ((itemA.compoundType === 'acid' && itemB.compoundType === 'base') ||
+      (itemB.compoundType === 'acid' && itemA.compoundType === 'base')) {
+    return {
+      result: 'Sal + H₂O',
+      name: `Neutralización Ácido-Base`,
+      common: `Solución Salina Neutralizada`,
+      equation: `${itemA.symbol} + ${itemB.symbol} → Sal Neutral + H₂O`,
+      type: 'Neutralización',
+      color: 'rgba(16,185,129,0.5)',
+      desc: `Un ácido fuerte reacciona con una base fuerte formando agua neutra y una sal disuelta con liberación de calor.`,
+      effect: 'steam',
+      glowColor: 'rgba(16,185,129,0.3)'
+    };
+  }
+
+  // Metal Activo + Ácido (Liberación H2)
+  if ((itemA.category === 'metal' && itemB.compoundType === 'acid') ||
+      (itemB.category === 'metal' && itemA.compoundType === 'acid')) {
+    const metal = itemA.category === 'metal' ? itemA : itemB;
+    const acid = itemA.category === 'metal' ? itemB : itemA;
+
+    return {
+      result: `Sal de ${metal.symbol} + H₂↑`,
+      name: `Ataque Ácido sobre ${metal.name}`,
+      common: `Desprendimiento de Hidrógeno`,
+      equation: `${metal.symbol} + ${acid.symbol} → Sal Metal + H₂↑`,
+      type: 'Sustitución Simple',
+      color: 'rgba(234,179,8,0.5)',
+      desc: `El ácido reacciona oxidando al ${metal.name}, desprendiendo burbujas de gas hidrógeno rápidamente.`,
+      effect: 'bubbles',
+      glowColor: 'rgba(234,179,8,0.3)'
+    };
+  }
+
+  // No Metal + Oxígeno (Anhídridos / Óxidos Ácidos)
+  if ((itemA.category === 'nonmetal' && itemB.id === 'o') || (itemB.category === 'nonmetal' && itemA.id === 'o')) {
+    const nonmetal = itemA.category === 'nonmetal' ? itemA : itemB;
+    const [subNM, subO] = simplifyRatio(2, nonmetal.valencia);
+    const formula = `${nonmetal.symbol}${toSubscript(subNM)}O${toSubscript(subO)}`;
+
+    return {
+      result: formula,
+      name: `Óxido de ${nonmetal.name}`,
+      common: `Óxido Ácido / Anhídrido`,
+      equation: `${subNM * 2}${nonmetal.symbol} + ${subO}O₂ → 2${formula}`,
+      type: 'Combustión / Oxidación',
+      color: 'rgba(56,189,248,0.45)',
+      desc: `El no metal ${nonmetal.name} reacciona gaseosamente con el Oxígeno creando un anhídrido de carácter ácido.`,
+      effect: 'steam',
+      glowColor: 'rgba(56,189,248,0.3)'
+    };
+  }
+
+  // Combinación Genérica Inteligente
+  const compFormula = `${itemA.symbol}${itemB.symbol}`;
+  const blendedColor = itemA.color;
+
+  return {
+    result: compFormula,
+    name: `Complejo / Aducto de ${itemA.name} y ${itemB.name}`,
+    common: `Mezcla Reactiva Prototipo`,
+    equation: `${itemA.symbol} + ${itemB.symbol} → ${compFormula}`,
+    type: 'Síntesis / Complejo',
+    color: blendedColor + '40',
+    desc: `Combinación dinámica de ${itemA.name} y ${itemB.name}. Interactúan químicamente formando enlaces de coordinación o soluciones mixtas.`,
+    effect: 'bubbles',
+    glowColor: blendedColor + '25'
+  };
+}
+
+function mixElements() {
+  if (selected.length < 2 || isMixed) return;
+  isMixed = true;
+
+  const mixBtn = document.getElementById('mix-btn');
+  mixBtn.textContent = '⏳ Procesando Reacción...';
+  mixBtn.disabled = true;
+
+  createBubbles(15);
+
+  setTimeout(() => {
+    const itemA = getItem(selected[0]);
+    const itemB = getItem(selected[1]);
+    const reaction = calculateDynamicReaction(itemA, itemB);
+
+    showResult(reaction);
+    mixBtn.textContent = '✅ Mezcla Completada';
+    mixBtn.style.background = '#64748b';
+  }, 1200);
+}
+
+function showResult(reaction) {
+  const liquid = document.getElementById('liquid');
+  const bubbles = document.getElementById('bubbles');
+  const precipitate = document.getElementById('precipitate');
+  const glow = document.getElementById('reaction-glow');
+  const steam = document.getElementById('steam');
+  const resultPanel = document.getElementById('result-panel');
+
+  liquid.style.background = reaction.color;
+  liquid.style.height = '72%';
+  glow.style.background = reaction.glowColor || 'rgba(34,197,94,0.2)';
+  glow.style.opacity = '1';
+
+  bubbles.innerHTML = '';
+  precipitate.style.opacity = '0';
+  precipitate.style.width = '0';
+  precipitate.style.height = '0';
+  steam.style.opacity = '0';
+
+  setTimeout(() => {
+    if (reaction.effect === 'bubbles') createBubbles(30);
+    else if (reaction.effect === 'precipitate') {
+      precipitate.style.background = reaction.precipitateColor || '#ffffff';
+      precipitate.style.width = '80px';
+      precipitate.style.height = '28px';
+      precipitate.style.borderRadius = '40px';
+      precipitate.style.opacity = '1';
+    } else if (reaction.effect === 'explosion') createExplosion();
+    else if (reaction.effect === 'sparkles') createSparkles();
+    else if (reaction.effect === 'steam') { steam.style.opacity = '1'; createBubbles(12); }
+  }, 200);
+
+  resultPanel.innerHTML = `
+    <div class="result-header">
+      <div class="result-formula">${reaction.result}</div>
+      <div class="result-name">${reaction.name}</div>
+    </div>
+    <div class="equation-box">
+      <div class="equation-label">Ecuación Química Balanceada</div>
+      <div class="equation-text">${reaction.equation}</div>
+    </div>
+    <div class="info-grid">
+      <div class="info-cell">
+        <div class="info-label">Tipo Reacción</div>
+        <div class="info-value" style="color:var(--accent);">${reaction.type}</div>
+      </div>
+      <div class="info-cell">
+        <div class="info-label">Clasificación</div>
+        <div class="info-value" style="color:#a3e635">${reaction.common}</div>
+      </div>
+    </div>
+    <div class="description-text">${reaction.desc}</div>
+  `;
+
+  const inputs = selected.map(id => getItem(id).symbol).join(' + ');
+  history.unshift({ inputs, result: reaction.result, name: reaction.name, type: reaction.type });
+  renderHistory();
+}
+
+function createBubbles(count) {
+  const container = document.getElementById('bubbles');
+  for (let i = 0; i < count; i++) {
+    const bubble = document.createElement('div');
+    const size = Math.random() * 10 + 4;
+    const left = Math.random() * 75 + 10;
+    const duration = Math.random() * 2 + 1;
+    const delay = Math.random() * 0.8;
+    bubble.className = 'bubble';
+    bubble.style.left = left + '%';
+    bubble.style.width = size + 'px';
+    bubble.style.height = size + 'px';
+    bubble.style.animationDuration = duration + 's';
+    bubble.style.animationDelay = delay + 's';
+    container.appendChild(bubble);
+    setTimeout(() => bubble.remove(), (duration + delay) * 1000);
+  }
+}
+
+function createExplosion() {
+  const container = document.getElementById('bubbles');
+  const colors = ['#f87171', '#fbbf24', '#fb923c', '#ef4444', '#fca5a5'];
+  for (let i = 0; i < 45; i++) {
+    const particle = document.createElement('div');
+    const size = Math.random() * 12 + 3;
+    const left = 45 + Math.random() * 10;
+    const top = 50 + Math.random() * 15;
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * 130 + 30;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance - Math.random() * 40;
+    const duration = Math.random() * 0.8 + 0.4;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    particle.className = 'particle';
+    particle.style.left = left + '%';
+    particle.style.top = top + '%';
+    particle.style.width = size + 'px';
+    particle.style.height = size + 'px';
+    particle.style.background = color;
+    particle.style.setProperty('--tx', tx + 'px');
+    particle.style.setProperty('--ty', ty + 'px');
+    particle.style.animationDuration = duration + 's';
+    container.appendChild(particle);
+    setTimeout(() => particle.remove(), duration * 1000);
+  }
+}
+
+function createSparkles() {
+  const container = document.getElementById('bubbles');
+  for (let i = 0; i < 25; i++) {
+    const sparkle = document.createElement('div');
+    const left = 30 + Math.random() * 40;
+    const top = 30 + Math.random() * 40;
+    const duration = Math.random() * 1.2 + 0.4;
+    sparkle.className = 'sparkle';
+    sparkle.style.left = left + '%';
+    sparkle.style.top = top + '%';
+    sparkle.style.animationDuration = duration + 's';
+    sparkle.style.animationDelay = (Math.random() * 0.4) + 's';
+    container.appendChild(sparkle);
+    setTimeout(() => sparkle.remove(), (duration + 0.5) * 1000);
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (history.length === 0) {
+    list.innerHTML = '<div class="empty-state">Aún no has realizado ninguna mezcla.</div>';
+    return;
+  }
+  list.innerHTML = history.slice(0, 10).map(h => `
+    <div class="history-item">
+      <div>
+        <span class="history-inputs">${h.inputs}</span>
+        <span class="history-arrow">→</span>
+        <span class="history-result">${h.result}</span>
+      </div>
+      <div class="history-name">${h.name} <span style="color:var(--text-muted);">(${h.type})</span></div>
+    </div>
+  `).join('');
+}
+
+function resetLab() {
+  selected = [];
+  isMixed = false;
+  const liquid = document.getElementById('liquid');
+  const bubbles = document.getElementById('bubbles');
+  const precipitate = document.getElementById('precipitate');
+  const glow = document.getElementById('reaction-glow');
+  const steam = document.getElementById('steam');
+  const mixBtn = document.getElementById('mix-btn');
+
+  liquid.style.height = '0%';
+  liquid.style.background = 'rgba(34,197,94,0.3)';
+  bubbles.innerHTML = '';
+  precipitate.style.opacity = '0';
+  glow.style.opacity = '0';
+  steam.style.opacity = '0';
+
+  mixBtn.textContent = '⚗️ MEZCLAR Y REACCIONAR';
+  mixBtn.style.background = 'var(--accent)';
+  mixBtn.disabled = true;
+
+  document.getElementById('result-panel').innerHTML = '<div class="empty-state">Mezcla 2 sustancias para ver la reacción generada.</div>';
+  updateUI();
+  showStatus('🧹 Matraz limpiado. Listo para un nuevo experimento.', 'info');
+}
+
+function showInfo() { document.getElementById('info-modal').classList.add('active'); }
+function closeInfo(e) {
+  if (!e || e.target === document.getElementById('info-modal')) {
+    document.getElementById('info-modal').classList.remove('active');
+  }
+}
+
+window.onload = function() {
+  renderAll();
+  renderHistory();
+};
+</script>
+</body>
+</html>
